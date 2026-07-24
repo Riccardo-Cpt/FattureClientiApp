@@ -83,11 +83,16 @@ class _ClientListScreenState extends State<ClientListScreen> {
               return ListTile(
                 title: Text('${entry.client.name} ${entry.client.surname}'),
                 subtitle: Text('Total: ${entry.total.toStringAsFixed(2)}'),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ClientDetailScreen(client: entry.client),
-                  ),
-                ),
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ClientDetailScreen(client: entry.client),
+                    ),
+                  );
+                  if (context.mounted) {
+                    context.read<ClientProvider>().loadClients();
+                  }
+                },
                 onLongPress: () async {
                   final action = await showModalBottomSheet<String>(
                     context: context,

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:spese_cliente_app/data/database_helper.dart';
 import 'package:spese_cliente_app/data/client_repository.dart';
+import 'package:spese_cliente_app/data/material_repository.dart';
 import 'package:spese_cliente_app/models/client.dart';
 import 'package:spese_cliente_app/providers/client_provider.dart';
 import 'package:spese_cliente_app/screens/client_list_screen.dart';
@@ -100,6 +101,43 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Something went wrong, please try again'), findsOneWidget);
+
+    await helper.close();
+  });
+
+  testWidgets('returning from the detail screen refreshes the running total', (tester) async {
+    final helper = DatabaseHelper(inMemory: true);
+    final clientRepo = ClientRepository(helper);
+    final materialRepo = MaterialRepository(helper);
+    final provider = ClientProvider(clientRepo);
+    await provider.addClient(Client(name: 'Mario', surname: 'Rossi'));
+
+    await tester.pumpWidget(
+      Provider<MaterialRepository>.value(
+        value: materialRepo,
+        child: buildTestable(provider),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Total: 0.00'), findsOneWidget);
+
+    await tester.tap(find.text('Mario Rossi'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('material_name_field')), 'Cement');
+    await tester.enterText(find.byKey(const Key('material_quantity_field')), '3');
+    await tester.enterText(find.byKey(const Key('material_unit_price_field')), '15');
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Total: 45.00'), findsOneWidget);
 
     await helper.close();
   });
