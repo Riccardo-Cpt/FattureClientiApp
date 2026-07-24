@@ -78,4 +78,29 @@ void main() {
 
     await helper.close();
   });
+
+  testWidgets('a failed add shows the generic error snackbar', (tester) async {
+    final helper = DatabaseHelper(inMemory: true);
+    final provider = ClientProvider(ClientRepository(helper));
+
+    await tester.pumpWidget(buildTestable(provider));
+    await tester.pumpAndSettle();
+
+    // Force the next database operation to fail by dropping the underlying
+    // table out from under the repository.
+    final db = await helper.database;
+    await db.execute('DROP TABLE clients');
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('client_name_field')), 'Mario');
+    await tester.enterText(find.byKey(const Key('client_surname_field')), 'Rossi');
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Something went wrong, please try again'), findsOneWidget);
+
+    await helper.close();
+  });
 }

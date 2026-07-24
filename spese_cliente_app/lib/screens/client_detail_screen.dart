@@ -74,6 +74,17 @@ class _ClientDetailBody extends StatelessWidget {
       appBar: AppBar(title: Text('${client.name} ${client.surname}')),
       body: Consumer<ClientDetailProvider>(
         builder: (context, provider, _) {
+          if (provider.errorMessage != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!context.mounted) return;
+              final message = provider.errorMessage;
+              if (message == null) return;
+              provider.clearError();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(message)),
+              );
+            });
+          }
           return Column(
             children: [
               Padding(

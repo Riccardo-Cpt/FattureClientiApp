@@ -48,4 +48,38 @@ void main() {
 
     await helper.close();
   });
+
+  testWidgets('a failed add shows the generic error snackbar', (tester) async {
+    final helper = DatabaseHelper(inMemory: true);
+    final clientRepo = ClientRepository(helper);
+    final materialRepo = MaterialRepository(helper);
+    final clientId = await clientRepo.insertClient(Client(name: 'Mario', surname: 'Rossi'));
+    final client = Client(id: clientId, name: 'Mario', surname: 'Rossi');
+
+    await tester.pumpWidget(
+      Provider<MaterialRepository>.value(
+        value: materialRepo,
+        child: MaterialApp(home: ClientDetailScreen(client: client)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Force the next database operation to fail by dropping the underlying
+    // table out from under the repository.
+    final db = await helper.database;
+    await db.execute('DROP TABLE materials');
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('material_name_field')), 'Cement');
+    await tester.enterText(find.byKey(const Key('material_quantity_field')), '3');
+    await tester.enterText(find.byKey(const Key('material_unit_price_field')), '15');
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Something went wrong, please try again'), findsOneWidget);
+
+    await helper.close();
+  });
 }

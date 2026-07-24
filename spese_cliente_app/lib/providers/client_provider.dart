@@ -71,4 +71,12 @@ class ClientProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Clears a surfaced error (e.g. after it has been shown in a SnackBar)
+  /// so the same message doesn't re-trigger on the next rebuild. No
+  /// listeners currently render based on the absence of an error, so this
+  /// does not call notifyListeners().
+  void clearError() {
+    errorMessage = null;
+  }
 }

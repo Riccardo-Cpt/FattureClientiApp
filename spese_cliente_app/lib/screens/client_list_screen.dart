@@ -62,6 +62,17 @@ class _ClientListScreenState extends State<ClientListScreen> {
       appBar: AppBar(title: const Text('Clients')),
       body: Consumer<ClientProvider>(
         builder: (context, provider, _) {
+          if (provider.errorMessage != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              final message = provider.errorMessage;
+              if (message == null) return;
+              provider.clearError();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(message)),
+              );
+            });
+          }
           if (provider.clients.isEmpty && !provider.isLoading) {
             return const Center(child: Text('No clients yet — tap + to add one.'));
           }
