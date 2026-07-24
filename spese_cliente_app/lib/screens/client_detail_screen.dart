@@ -71,7 +71,12 @@ class _ClientDetailBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('${client.name} ${client.surname}')),
+      appBar: AppBar(
+        title: Text(
+          '${client.name} ${client.surname}',
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
       body: Consumer<ClientDetailProvider>(
         builder: (context, provider, _) {
           if (provider.errorMessage != null) {
@@ -91,20 +96,34 @@ class _ClientDetailBody extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: Text(
                   'Total: ${provider.totalSpent.toStringAsFixed(2)}',
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ),
+              const Divider(height: 1, thickness: 1),
               Expanded(
                 child: provider.materials.isEmpty && !provider.isLoading
                     ? const Center(child: Text('No materials yet for this client.'))
-                    : ListView.builder(
+                    : ListView.separated(
                         itemCount: provider.materials.length,
+                        separatorBuilder: (context, index) => const Divider(height: 1),
                         itemBuilder: (context, index) {
                           final item = provider.materials[index];
                           return ListTile(
                             title: Text(item.name),
                             subtitle: Text(
                               '${item.quantity} x ${item.unitPrice.toStringAsFixed(2)} = ${item.totalPrice.toStringAsFixed(2)}',
+                            ),
+                            trailing: IconButton(
+                              key: Key('paid_toggle_${item.id}'),
+                              icon: Icon(
+                                item.paid ? Icons.check_circle : Icons.check_circle_outline,
+                                color: item.paid ? Colors.green : null,
+                              ),
+                              tooltip: item.paid ? 'Paid' : 'Mark as paid',
+                              onPressed: () =>
+                                  context.read<ClientDetailProvider>().togglePaid(item),
                             ),
                             onTap: () => _showMaterialDialog(context, initial: item),
                             onLongPress: () => _confirmDelete(context, item),

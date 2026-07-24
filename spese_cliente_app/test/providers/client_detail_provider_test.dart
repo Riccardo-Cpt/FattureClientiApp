@@ -80,4 +80,46 @@ void main() {
     expect(provider.materials, isEmpty);
     expect(provider.totalSpent, 0.0);
   });
+
+  test('togglePaid marks a material paid and excludes it from totalSpent', () async {
+    await provider.addMaterial(MaterialItem(
+      clientId: clientId,
+      name: 'Cement',
+      quantity: 3,
+      unitPrice: 15,
+      date: DateTime(2026, 7, 20),
+    ));
+    await provider.addMaterial(MaterialItem(
+      clientId: clientId,
+      name: 'Bricks',
+      quantity: 10,
+      unitPrice: 2.5,
+      date: DateTime(2026, 7, 21),
+    ));
+    expect(provider.totalSpent, 70.0);
+
+    final cement = provider.materials.firstWhere((m) => m.name == 'Cement');
+    await provider.togglePaid(cement);
+
+    expect(provider.materials.firstWhere((m) => m.name == 'Cement').paid, isTrue);
+    expect(provider.totalSpent, 25.0);
+  });
+
+  test('togglePaid can unmark a material as paid', () async {
+    await provider.addMaterial(MaterialItem(
+      clientId: clientId,
+      name: 'Cement',
+      quantity: 3,
+      unitPrice: 15,
+      date: DateTime(2026, 7, 20),
+    ));
+    final item = provider.materials.first;
+
+    await provider.togglePaid(item);
+    expect(provider.materials.first.paid, isTrue);
+
+    await provider.togglePaid(provider.materials.first);
+    expect(provider.materials.first.paid, isFalse);
+    expect(provider.totalSpent, 45.0);
+  });
 }

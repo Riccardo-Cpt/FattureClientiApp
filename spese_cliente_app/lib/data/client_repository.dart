@@ -35,7 +35,7 @@ class ClientRepository {
   Future<double> getTotalSpentForClient(int clientId) async {
     final db = await _helper.database;
     final result = await db.rawQuery(
-      'SELECT SUM(quantity * unitPrice) as total FROM materials WHERE clientId = ?',
+      'SELECT SUM(quantity * unitPrice) as total FROM materials WHERE clientId = ? AND paid = 0',
       [clientId],
     );
     final total = result.first['total'] as double?;

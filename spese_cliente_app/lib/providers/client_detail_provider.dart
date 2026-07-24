@@ -12,8 +12,9 @@ class ClientDetailProvider extends ChangeNotifier {
   bool isLoading = false;
   String? errorMessage;
 
-  double get totalSpent =>
-      materials.fold(0.0, (sum, item) => sum + item.totalPrice);
+  double get totalSpent => materials
+      .where((item) => !item.paid)
+      .fold(0.0, (sum, item) => sum + item.totalPrice);
 
   Future<void> loadMaterials() async {
     isLoading = true;
@@ -55,6 +56,17 @@ class ClientDetailProvider extends ChangeNotifier {
   Future<void> deleteMaterial(int id) async {
     try {
       await _repo.deleteMaterial(id);
+      errorMessage = null;
+      await loadMaterials();
+    } catch (_) {
+      errorMessage = 'Something went wrong, please try again';
+      notifyListeners();
+    }
+  }
+
+  Future<void> togglePaid(MaterialItem item) async {
+    try {
+      await _repo.setPaid(item.id!, !item.paid);
       errorMessage = null;
       await loadMaterials();
     } catch (_) {

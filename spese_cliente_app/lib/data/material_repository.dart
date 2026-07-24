@@ -36,4 +36,14 @@ class MaterialRepository {
     final db = await _helper.database;
     await db.delete('materials', where: 'id = ?', whereArgs: [id]);
   }
+
+  Future<void> setPaid(int id, bool paid) async {
+    final db = await _helper.database;
+    await db.update(
+      'materials',
+      {'paid': paid ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
 }

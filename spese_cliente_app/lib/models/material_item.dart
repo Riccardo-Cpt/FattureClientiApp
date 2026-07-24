@@ -5,6 +5,7 @@ class MaterialItem {
   final double quantity;
   final double unitPrice;
   final DateTime date;
+  final bool paid;
 
   MaterialItem({
     this.id,
@@ -13,6 +14,7 @@ class MaterialItem {
     required this.quantity,
     required this.unitPrice,
     required this.date,
+    this.paid = false,
   });
 
   double get totalPrice => quantity * unitPrice;
@@ -24,6 +26,7 @@ class MaterialItem {
       'quantity': quantity,
       'unitPrice': unitPrice,
       'date': date.toIso8601String(),
+      'paid': paid ? 1 : 0,
     };
     if (id != null) {
       map['id'] = id;
@@ -39,6 +42,7 @@ class MaterialItem {
       quantity: (map['quantity'] as num).toDouble(),
       unitPrice: (map['unitPrice'] as num).toDouble(),
       date: DateTime.parse(map['date'] as String),
+      paid: (map['paid'] as int? ?? 0) == 1,
     );
   }
 
@@ -49,6 +53,7 @@ class MaterialItem {
     double? quantity,
     double? unitPrice,
     DateTime? date,
+    bool? paid,
   }) {
     return MaterialItem(
       id: id ?? this.id,
@@ -57,6 +62,7 @@ class MaterialItem {
       quantity: quantity ?? this.quantity,
       unitPrice: unitPrice ?? this.unitPrice,
       date: date ?? this.date,
+      paid: paid ?? this.paid,
     );
   }
 }

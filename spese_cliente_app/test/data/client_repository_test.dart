@@ -101,4 +101,28 @@ void main() {
 
     expect(await repo.getTotalSpentForClient(id), 70.0);
   });
+
+  test('getTotalSpentForClient excludes paid materials', () async {
+    final id = await repo.insertClient(Client(name: 'Mario', surname: 'Rossi'));
+    final db = await helper.database;
+
+    await db.insert('materials', {
+      'clientId': id,
+      'name': 'Cement',
+      'quantity': 3.0,
+      'unitPrice': 15.0,
+      'date': DateTime(2026, 7, 20).toIso8601String(),
+      'paid': 1,
+    });
+    await db.insert('materials', {
+      'clientId': id,
+      'name': 'Bricks',
+      'quantity': 10.0,
+      'unitPrice': 2.5,
+      'date': DateTime(2026, 7, 20).toIso8601String(),
+      'paid': 0,
+    });
+
+    expect(await repo.getTotalSpentForClient(id), 25.0);
+  });
 }

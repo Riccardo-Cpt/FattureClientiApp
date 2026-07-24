@@ -4,6 +4,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:spese_cliente_app/data/database_helper.dart';
 import 'package:spese_cliente_app/data/client_repository.dart';
 import 'package:spese_cliente_app/models/client.dart';
+import 'package:spese_cliente_app/models/material_item.dart';
 import 'package:spese_cliente_app/screens/client_detail_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:spese_cliente_app/data/material_repository.dart';
@@ -45,6 +46,40 @@ void main() {
 
     expect(find.textContaining('Cement'), findsOneWidget);
     expect(find.textContaining('45.00'), findsWidgets);
+
+    await helper.close();
+  });
+
+  testWidgets('tapping the paid icon marks a material paid and deducts it from the total', (tester) async {
+    final helper = DatabaseHelper(inMemory: true);
+    final clientRepo = ClientRepository(helper);
+    final materialRepo = MaterialRepository(helper);
+    final clientId = await clientRepo.insertClient(Client(name: 'Mario', surname: 'Rossi'));
+    final client = Client(id: clientId, name: 'Mario', surname: 'Rossi');
+    final materialId = await materialRepo.insertMaterial(MaterialItem(
+      clientId: clientId,
+      name: 'Cement',
+      quantity: 3,
+      unitPrice: 15,
+      date: DateTime(2026, 7, 20),
+    ));
+
+    await tester.pumpWidget(
+      Provider<MaterialRepository>.value(
+        value: materialRepo,
+        child: MaterialApp(home: ClientDetailScreen(client: client)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Total: 45.00'), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+
+    await tester.tap(find.byKey(Key('paid_toggle_$materialId')));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+    expect(find.text('Total: 0.00'), findsOneWidget);
 
     await helper.close();
   });

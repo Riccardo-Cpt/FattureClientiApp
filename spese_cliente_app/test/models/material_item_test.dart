@@ -14,7 +14,7 @@ void main() {
     expect(item.totalPrice, 45.0);
   });
 
-  test('toMap/fromMap round-trip preserves fields and date', () {
+  test('toMap/fromMap round-trip preserves fields, date, and paid', () {
     final date = DateTime(2026, 7, 20);
     final item = MaterialItem(
       id: 5,
@@ -23,6 +23,7 @@ void main() {
       quantity: 10,
       unitPrice: 2.5,
       date: date,
+      paid: true,
     );
 
     final map = item.toMap();
@@ -32,6 +33,7 @@ void main() {
     expect(map['quantity'], 10.0);
     expect(map['unitPrice'], 2.5);
     expect(map['date'], date.toIso8601String());
+    expect(map['paid'], 1);
 
     final rebuilt = MaterialItem.fromMap(map);
     expect(rebuilt.id, 5);
@@ -41,6 +43,19 @@ void main() {
     expect(rebuilt.unitPrice, 2.5);
     expect(rebuilt.date, date);
     expect(rebuilt.totalPrice, 25.0);
+    expect(rebuilt.paid, isTrue);
+  });
+
+  test('paid defaults to false when not provided', () {
+    final item = MaterialItem(
+      clientId: 1,
+      name: 'Cement',
+      quantity: 3,
+      unitPrice: 15,
+      date: DateTime(2026, 7, 20),
+    );
+    expect(item.paid, isFalse);
+    expect(item.toMap()['paid'], 0);
   });
 
   test('toMap omits id when null (for insert)', () {

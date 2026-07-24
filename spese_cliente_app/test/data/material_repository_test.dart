@@ -115,4 +115,22 @@ void main() {
     expect(results.length, 1);
     expect(results.first.id, keepId);
   });
+
+  test('setPaid marks a material as paid, and can unmark it', () async {
+    final id = await materialRepo.insertMaterial(MaterialItem(
+      clientId: clientId,
+      name: 'Cement',
+      quantity: 3,
+      unitPrice: 15,
+      date: DateTime(2026, 7, 20),
+    ));
+
+    await materialRepo.setPaid(id, true);
+    var results = await materialRepo.getMaterialsForClient(clientId);
+    expect(results.first.paid, isTrue);
+
+    await materialRepo.setPaid(id, false);
+    results = await materialRepo.getMaterialsForClient(clientId);
+    expect(results.first.paid, isFalse);
+  });
 }

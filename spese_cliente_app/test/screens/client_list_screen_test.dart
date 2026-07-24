@@ -6,6 +6,7 @@ import 'package:spese_cliente_app/data/database_helper.dart';
 import 'package:spese_cliente_app/data/client_repository.dart';
 import 'package:spese_cliente_app/data/material_repository.dart';
 import 'package:spese_cliente_app/models/client.dart';
+import 'package:spese_cliente_app/models/material_item.dart';
 import 'package:spese_cliente_app/providers/client_provider.dart';
 import 'package:spese_cliente_app/screens/client_list_screen.dart';
 
@@ -101,6 +102,42 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Something went wrong, please try again'), findsOneWidget);
+
+    await helper.close();
+  });
+
+  testWidgets('shows the grand total as the sum of all client totals', (tester) async {
+    final helper = DatabaseHelper(inMemory: true);
+    final clientRepo = ClientRepository(helper);
+    final materialRepo = MaterialRepository(helper);
+    final provider = ClientProvider(clientRepo);
+
+    final mario = await clientRepo.insertClient(Client(name: 'Mario', surname: 'Rossi'));
+    await materialRepo.insertMaterial(MaterialItem(
+      clientId: mario,
+      name: 'Cement',
+      quantity: 3,
+      unitPrice: 15,
+      date: DateTime(2026, 7, 20),
+    ));
+    final anna = await clientRepo.insertClient(Client(name: 'Anna', surname: 'Bianchi'));
+    await materialRepo.insertMaterial(MaterialItem(
+      clientId: anna,
+      name: 'Bricks',
+      quantity: 10,
+      unitPrice: 2.5,
+      date: DateTime(2026, 7, 20),
+    ));
+
+    await tester.pumpWidget(
+      Provider<MaterialRepository>.value(
+        value: materialRepo,
+        child: buildTestable(provider),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Grand total: 70.00'), findsOneWidget);
 
     await helper.close();
   });

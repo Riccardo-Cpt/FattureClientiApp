@@ -59,7 +59,12 @@ class _ClientListScreenState extends State<ClientListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Clients')),
+      appBar: AppBar(
+        title: const Text(
+          'Clients',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
       body: Consumer<ClientProvider>(
         builder: (context, provider, _) {
           if (provider.errorMessage != null) {
@@ -76,50 +81,71 @@ class _ClientListScreenState extends State<ClientListScreen> {
           if (provider.clients.isEmpty && !provider.isLoading) {
             return const Center(child: Text('No clients yet — tap + to add one.'));
           }
-          return ListView.builder(
-            itemCount: provider.clients.length,
-            itemBuilder: (context, index) {
-              final entry = provider.clients[index];
-              return ListTile(
-                title: Text('${entry.client.name} ${entry.client.surname}'),
-                subtitle: Text('Total: ${entry.total.toStringAsFixed(2)}'),
-                onTap: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ClientDetailScreen(client: entry.client),
-                    ),
-                  );
-                  if (context.mounted) {
-                    context.read<ClientProvider>().loadClients();
-                  }
-                },
-                onLongPress: () async {
-                  final action = await showModalBottomSheet<String>(
-                    context: context,
-                    builder: (context) => Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ListTile(
-                          leading: const Icon(Icons.edit),
-                          title: const Text('Edit'),
-                          onTap: () => Navigator.of(context).pop('edit'),
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.delete),
-                          title: const Text('Delete'),
-                          onTap: () => Navigator.of(context).pop('delete'),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (action == 'edit') {
-                    await _showClientDialog(initial: entry.client);
-                  } else if (action == 'delete') {
-                    await _confirmDelete(entry.client);
-                  }
-                },
-              );
-            },
+          final grandTotal = provider.clients.fold(0.0, (sum, entry) => sum + entry.total);
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Grand total: ${grandTotal.toStringAsFixed(2)}',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ),
+              const Divider(height: 1, thickness: 1),
+              Expanded(
+                child: ListView.separated(
+                  itemCount: provider.clients.length,
+                  separatorBuilder: (context, index) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final entry = provider.clients[index];
+                    return ListTile(
+                      title: Text('${entry.client.name} ${entry.client.surname}'),
+                      subtitle: Text(
+                        'Total: ${entry.total.toStringAsFixed(2)}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => ClientDetailScreen(client: entry.client),
+                          ),
+                        );
+                        if (context.mounted) {
+                          context.read<ClientProvider>().loadClients();
+                        }
+                      },
+                      onLongPress: () async {
+                        final action = await showModalBottomSheet<String>(
+                          context: context,
+                          builder: (context) => Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ListTile(
+                                leading: const Icon(Icons.edit),
+                                title: const Text('Edit'),
+                                onTap: () => Navigator.of(context).pop('edit'),
+                              ),
+                              ListTile(
+                                leading: const Icon(Icons.delete),
+                                title: const Text('Delete'),
+                                onTap: () => Navigator.of(context).pop('delete'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (action == 'edit') {
+                          await _showClientDialog(initial: entry.client);
+                        } else if (action == 'delete') {
+                          await _confirmDelete(entry.client);
+                        }
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
           );
         },
       ),
