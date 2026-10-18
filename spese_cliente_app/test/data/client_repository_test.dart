@@ -125,4 +125,25 @@ void main() {
 
     expect(await repo.getTotalSpentForClient(id), 25.0);
   });
+
+  test('year filter restricts totals and getMaterialYears lists distinct years', () async {
+    final id = await repo.insertClient(Client(name: 'Mario', surname: 'Rossi'));
+    final db = await helper.database;
+    for (final date in [DateTime(2025, 12, 31), DateTime(2026, 1, 1), DateTime(2026, 7, 20)]) {
+      await db.insert('materials', {
+        'clientId': id,
+        'name': 'Item',
+        'quantity': 1.0,
+        'unitPrice': 10.0,
+        'date': date.toIso8601String(),
+        'paid': 0,
+      });
+    }
+
+    expect(await repo.getTotalSpentForClient(id), 30.0);
+    expect(await repo.getTotalSpentForClient(id, year: 2026), 20.0);
+    expect(await repo.getTotalSpentForClient(id, year: 2025), 10.0);
+    expect(await repo.getTotalSpentForClient(id, year: 2024), 0.0);
+    expect(await repo.getMaterialYears(), [2026, 2025]);
+  });
 }

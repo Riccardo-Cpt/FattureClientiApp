@@ -22,6 +22,12 @@ class MaterialRepository {
     return rows.map(MaterialItem.fromMap).toList();
   }
 
+  Future<List<MaterialItem>> getAllMaterials() async {
+    final db = await _helper.database;
+    final rows = await db.query('materials', orderBy: 'date DESC');
+    return rows.map(MaterialItem.fromMap).toList();
+  }
+
   Future<void> updateMaterial(MaterialItem item) async {
     final db = await _helper.database;
     await db.update(

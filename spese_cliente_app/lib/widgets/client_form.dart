@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:spese_cliente_app/l10n/strings.dart';
 import 'package:spese_cliente_app/models/client.dart';
 
 class ClientForm extends StatefulWidget {
@@ -42,14 +43,16 @@ class _ClientFormState extends State<ClientForm> {
   }
 
   String? _requiredValidator(String? value) {
+    final s = S.of(context);
     if (value == null || value.trim().isEmpty) {
-      return 'Required';
+      return s.required;
     }
     return null;
   }
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     return Form(
       key: _formKey,
       child: Column(
@@ -58,19 +61,19 @@ class _ClientFormState extends State<ClientForm> {
           TextFormField(
             key: const Key('client_name_field'),
             controller: _nameController,
-            decoration: const InputDecoration(labelText: 'Name'),
+            decoration: InputDecoration(labelText: s.name),
             validator: _requiredValidator,
           ),
           TextFormField(
             key: const Key('client_surname_field'),
             controller: _surnameController,
-            decoration: const InputDecoration(labelText: 'Surname'),
+            decoration: InputDecoration(labelText: s.surname),
             validator: _requiredValidator,
           ),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _submit,
-            child: Text(widget.initial == null ? 'Add' : 'Save'),
+            child: Text(widget.initial == null ? s.add : s.save),
           ),
         ],
       ),

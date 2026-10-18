@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:spese_cliente_app/l10n/strings.dart';
 import 'package:spese_cliente_app/models/material_item.dart';
 
 class MaterialForm extends StatefulWidget {
@@ -57,30 +58,33 @@ class _MaterialFormState extends State<MaterialForm> {
   }
 
   String? _requiredValidator(String? value) {
+    final s = S.of(context);
     if (value == null || value.trim().isEmpty) {
-      return 'Required';
+      return s.required;
     }
     return null;
   }
 
   String? _positiveQuantityValidator(String? value) {
+    final s = S.of(context);
     final parsed = double.tryParse(value ?? '');
     if (parsed == null) {
-      return 'Must be a number';
+      return s.mustBeNumber;
     }
     if (parsed <= 0) {
-      return 'Must be greater than 0';
+      return s.mustBePositive;
     }
     return null;
   }
 
   String? _nonNegativePriceValidator(String? value) {
+    final s = S.of(context);
     final parsed = double.tryParse(value ?? '');
     if (parsed == null) {
-      return 'Must be a number';
+      return s.mustBeNumber;
     }
     if (parsed < 0) {
-      return 'Must be 0 or greater';
+      return s.mustBeNonNegative;
     }
     return null;
   }
@@ -108,11 +112,13 @@ class _MaterialFormState extends State<MaterialForm> {
       quantity: double.parse(_quantityController.text),
       unitPrice: double.parse(_unitPriceController.text),
       date: _date,
+      paid: widget.initial?.paid ?? false,
     ));
   }
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     return Form(
       key: _formKey,
       child: Column(
@@ -121,33 +127,33 @@ class _MaterialFormState extends State<MaterialForm> {
           TextFormField(
             key: const Key('material_name_field'),
             controller: _nameController,
-            decoration: const InputDecoration(labelText: 'Name'),
+            decoration: InputDecoration(labelText: s.name),
             validator: _requiredValidator,
           ),
           TextFormField(
             key: const Key('material_quantity_field'),
             controller: _quantityController,
-            decoration: const InputDecoration(labelText: 'Quantity'),
+            decoration: InputDecoration(labelText: s.quantity),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             validator: _positiveQuantityValidator,
           ),
           TextFormField(
             key: const Key('material_unit_price_field'),
             controller: _unitPriceController,
-            decoration: const InputDecoration(labelText: 'Unit price'),
+            decoration: InputDecoration(labelText: s.unitPrice),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             validator: _nonNegativePriceValidator,
           ),
-          Text('Total: ${_liveTotal.toStringAsFixed(2)}'),
+          Text(s.total(_liveTotal)),
           ListTile(
-            title: Text('Date: ${_date.year}-${_date.month.toString().padLeft(2, '0')}-${_date.day.toString().padLeft(2, '0')}'),
+            title: Text(s.date('${_date.year}-${_date.month.toString().padLeft(2, '0')}-${_date.day.toString().padLeft(2, '0')}')),
             trailing: const Icon(Icons.calendar_today),
             onTap: _pickDate,
           ),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _submit,
-            child: Text(widget.initial == null ? 'Add' : 'Save'),
+            child: Text(widget.initial == null ? s.add : s.save),
           ),
         ],
       ),

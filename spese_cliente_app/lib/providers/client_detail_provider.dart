@@ -6,9 +6,29 @@ class ClientDetailProvider extends ChangeNotifier {
   final MaterialRepository _repo;
   final int clientId;
 
-  ClientDetailProvider(this._repo, this.clientId);
+  ClientDetailProvider(this._repo, this.clientId, {this.selectedYear});
 
-  List<MaterialItem> materials = [];
+  List<MaterialItem> _all = [];
+
+  /// Year the list is restricted to; null means all years.
+  int? selectedYear;
+
+  /// Materials in the selected year.
+  List<MaterialItem> get materials => selectedYear == null
+      ? _all
+      : _all.where((item) => item.date.year == selectedYear).toList();
+
+  /// Years offered in the selector, newest first.
+  List<int> get years {
+    final set = {for (final item in _all) item.date.year, ?selectedYear};
+    return set.toList()..sort((a, b) => b.compareTo(a));
+  }
+
+  void selectYear(int? year) {
+    selectedYear = year;
+    notifyListeners();
+  }
+
   bool isLoading = false;
   String? errorMessage;
 
@@ -21,7 +41,7 @@ class ClientDetailProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      materials = await _repo.getMaterialsForClient(clientId);
+      _all = await _repo.getMaterialsForClient(clientId);
       errorMessage = null;
     } catch (_) {
       errorMessage = 'Something went wrong, please try again';

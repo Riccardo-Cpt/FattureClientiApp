@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:spese_cliente_app/l10n/strings.dart';
 import 'package:spese_cliente_app/models/client.dart';
 import 'package:spese_cliente_app/providers/client_provider.dart';
+import 'package:spese_cliente_app/providers/locale_provider.dart';
 import 'package:spese_cliente_app/screens/client_detail_screen.dart';
+import 'package:spese_cliente_app/screens/stats_screen.dart';
 import 'package:spese_cliente_app/widgets/client_form.dart';
 import 'package:spese_cliente_app/widgets/confirm_delete_dialog.dart';
+import 'package:spese_cliente_app/widgets/year_selector.dart';
 
 class ClientListScreen extends StatefulWidget {
   const ClientListScreen({super.key});
@@ -48,8 +52,8 @@ class _ClientListScreenState extends State<ClientListScreen> {
   Future<void> _confirmDelete(Client client) async {
     final confirmed = await showConfirmDeleteDialog(
       context,
-      title: 'Delete client',
-      message: 'Delete ${client.name} ${client.surname} and all their materials?',
+      title: S.of(context).deleteClient,
+      message: S.of(context).deleteClientMessage('${client.name} ${client.surname}'),
     );
     if (confirmed && mounted) {
       await context.read<ClientProvider>().deleteClient(client.id!);
@@ -58,36 +62,65 @@ class _ClientListScreenState extends State<ClientListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Clients',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          s.clients,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
+        actions: [
+          IconButton(
+            key: const Key('stats_button'),
+            icon: const Icon(Icons.bar_chart),
+            tooltip: s.statistics,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => StatsScreen(
+                  initialYear: context.read<ClientProvider>().selectedYear,
+                ),
+              ),
+            ),
+          ),
+          PopupMenuButton<Locale>(
+            key: const Key('language_button'),
+            icon: const Icon(Icons.language),
+            tooltip: s.language,
+            onSelected: (locale) => context.read<LocaleProvider>().setLocale(locale),
+            itemBuilder: (_) => [
+              PopupMenuItem(value: const Locale('en'), child: Text(s.english)),
+              PopupMenuItem(value: const Locale('it'), child: Text(s.italian)),
+            ],
+          ),
+        ],
       ),
       body: Consumer<ClientProvider>(
         builder: (context, provider, _) {
           if (provider.errorMessage != null) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!mounted) return;
-              final message = provider.errorMessage;
-              if (message == null) return;
+              if (provider.errorMessage == null) return;
               provider.clearError();
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(message)),
+                SnackBar(content: Text(s.genericError)),
               );
             });
           }
           if (provider.clients.isEmpty && !provider.isLoading) {
-            return const Center(child: Text('No clients yet — tap + to add one.'));
+            return Center(child: Text(s.noClients));
           }
           final grandTotal = provider.clients.fold(0.0, (sum, entry) => sum + entry.total);
           return Column(
             children: [
+              YearSelector(
+                years: provider.years,
+                selected: provider.selectedYear,
+                onChanged: provider.selectYear,
+              ),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  'Grand total: ${grandTotal.toStringAsFixed(2)}',
+                  s.grandTotal(grandTotal),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -103,13 +136,16 @@ class _ClientListScreenState extends State<ClientListScreen> {
                     return ListTile(
                       title: Text('${entry.client.name} ${entry.client.surname}'),
                       subtitle: Text(
-                        'Total: ${entry.total.toStringAsFixed(2)}',
+                        s.total(entry.total),
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       onTap: () async {
                         await Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => ClientDetailScreen(client: entry.client),
+                            builder: (_) => ClientDetailScreen(
+                              client: entry.client,
+                              initialYear: provider.selectedYear,
+                            ),
                           ),
                         );
                         if (context.mounted) {
@@ -124,12 +160,12 @@ class _ClientListScreenState extends State<ClientListScreen> {
                             children: [
                               ListTile(
                                 leading: const Icon(Icons.edit),
-                                title: const Text('Edit'),
+                                title: Text(s.edit),
                                 onTap: () => Navigator.of(context).pop('edit'),
                               ),
                               ListTile(
                                 leading: const Icon(Icons.delete),
-                                title: const Text('Delete'),
+                                title: Text(s.delete),
                                 onTap: () => Navigator.of(context).pop('delete'),
                               ),
                             ],

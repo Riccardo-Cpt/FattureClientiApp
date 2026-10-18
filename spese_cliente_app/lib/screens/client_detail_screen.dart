@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:spese_cliente_app/data/material_repository.dart';
+import 'package:spese_cliente_app/l10n/strings.dart';
 import 'package:spese_cliente_app/models/client.dart';
 import 'package:spese_cliente_app/models/material_item.dart';
 import 'package:spese_cliente_app/providers/client_detail_provider.dart';
 import 'package:spese_cliente_app/widgets/confirm_delete_dialog.dart';
 import 'package:spese_cliente_app/widgets/material_form.dart';
+import 'package:spese_cliente_app/widgets/year_selector.dart';
 
 class ClientDetailScreen extends StatelessWidget {
   final Client client;
+  final int? initialYear;
 
-  const ClientDetailScreen({super.key, required this.client});
+  const ClientDetailScreen({super.key, required this.client, this.initialYear});
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +22,7 @@ class ClientDetailScreen extends StatelessWidget {
         final provider = ClientDetailProvider(
           context.read<MaterialRepository>(),
           client.id!,
+          selectedYear: initialYear,
         );
         provider.loadMaterials();
         return provider;
@@ -60,8 +64,8 @@ class _ClientDetailBody extends StatelessWidget {
   Future<void> _confirmDelete(BuildContext context, MaterialItem item) async {
     final confirmed = await showConfirmDeleteDialog(
       context,
-      title: 'Delete material',
-      message: 'Delete this material entry?',
+      title: S.of(context).deleteMaterial,
+      message: S.of(context).deleteMaterialMessage,
     );
     if (confirmed && context.mounted) {
       await context.read<ClientDetailProvider>().deleteMaterial(item.id!);
@@ -70,6 +74,7 @@ class _ClientDetailBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -82,20 +87,24 @@ class _ClientDetailBody extends StatelessWidget {
           if (provider.errorMessage != null) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!context.mounted) return;
-              final message = provider.errorMessage;
-              if (message == null) return;
+              if (provider.errorMessage == null) return;
               provider.clearError();
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(message)),
+                SnackBar(content: Text(s.genericError)),
               );
             });
           }
           return Column(
             children: [
+              YearSelector(
+                years: provider.years,
+                selected: provider.selectedYear,
+                onChanged: provider.selectYear,
+              ),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  'Total: ${provider.totalSpent.toStringAsFixed(2)}',
+                  s.total(provider.totalSpent),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -104,7 +113,11 @@ class _ClientDetailBody extends StatelessWidget {
               const Divider(height: 1, thickness: 1),
               Expanded(
                 child: provider.materials.isEmpty && !provider.isLoading
-                    ? const Center(child: Text('No materials yet for this client.'))
+                    ? Center(
+                        child: Text(
+                          provider.selectedYear == null ? s.noMaterials : s.noMaterialsYear,
+                        ),
+                      )
                     : ListView.separated(
                         itemCount: provider.materials.length,
                         separatorBuilder: (context, index) => const Divider(height: 1),
@@ -113,7 +126,7 @@ class _ClientDetailBody extends StatelessWidget {
                           return ListTile(
                             title: Text(item.name),
                             subtitle: Text(
-                              '${item.quantity} x ${item.unitPrice.toStringAsFixed(2)} = ${item.totalPrice.toStringAsFixed(2)}',
+                              '${item.quantity} x ${s.money(item.unitPrice)} = ${s.money(item.totalPrice)}',
                             ),
                             trailing: IconButton(
                               key: Key('paid_toggle_${item.id}'),
@@ -121,7 +134,7 @@ class _ClientDetailBody extends StatelessWidget {
                                 item.paid ? Icons.check_circle : Icons.check_circle_outline,
                                 color: item.paid ? Colors.green : null,
                               ),
-                              tooltip: item.paid ? 'Paid' : 'Mark as paid',
+                              tooltip: item.paid ? s.paid : s.markAsPaid,
                               onPressed: () =>
                                   context.read<ClientDetailProvider>().togglePaid(item),
                             ),

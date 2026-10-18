@@ -12,9 +12,17 @@ class ClientWithTotal {
 class ClientProvider extends ChangeNotifier {
   final ClientRepository _repo;
 
-  ClientProvider(this._repo);
+  ClientProvider(this._repo, {int? initialYear})
+      : selectedYear = initialYear ?? DateTime.now().year;
 
   List<ClientWithTotal> clients = [];
+
+  /// Year the totals are restricted to; null means all years.
+  int? selectedYear;
+
+  /// Years offered in the selector, newest first (always includes the
+  /// current year and the selected one).
+  List<int> years = [];
   bool isLoading = false;
   String? errorMessage;
 
@@ -26,9 +34,15 @@ class ClientProvider extends ChangeNotifier {
       final all = await _repo.getAllClients();
       final withTotals = <ClientWithTotal>[];
       for (final client in all) {
-        final total = await _repo.getTotalSpentForClient(client.id!);
+        final total = await _repo.getTotalSpentForClient(client.id!, year: selectedYear);
         withTotals.add(ClientWithTotal(client, total));
       }
+      final yearSet = {
+        ...await _repo.getMaterialYears(),
+        DateTime.now().year,
+        ?selectedYear,
+      };
+      years = yearSet.toList()..sort((a, b) => b.compareTo(a));
       clients = withTotals;
       errorMessage = null;
     } catch (_) {
@@ -37,6 +51,11 @@ class ClientProvider extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> selectYear(int? year) async {
+    selectedYear = year;
+    await loadClients();
   }
 
   Future<void> addClient(Client client) async {

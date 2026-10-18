@@ -32,13 +32,28 @@ class ClientRepository {
     await db.delete('clients', where: 'id = ?', whereArgs: [id]);
   }
 
-  Future<double> getTotalSpentForClient(int clientId) async {
+  /// Unpaid total for a client, optionally restricted to a calendar [year].
+  Future<double> getTotalSpentForClient(int clientId, {int? year}) async {
     final db = await _helper.database;
     final result = await db.rawQuery(
-      'SELECT SUM(quantity * unitPrice) as total FROM materials WHERE clientId = ? AND paid = 0',
-      [clientId],
+      'SELECT SUM(quantity * unitPrice) as total FROM materials '
+      'WHERE clientId = ? AND paid = 0'
+      '${year == null ? '' : " AND substr(date, 1, 4) = ?"}',
+      [clientId, if (year != null) year.toString().padLeft(4, '0')],
     );
     final total = result.first['total'] as double?;
     return total ?? 0.0;
+  }
+
+  /// Distinct years that have at least one material, newest first.
+  Future<List<int>> getMaterialYears() async {
+    final db = await _helper.database;
+    final rows = await db.rawQuery(
+      'SELECT DISTINCT substr(date, 1, 4) as year FROM materials ORDER BY year DESC',
+    );
+    return rows
+        .map((r) => int.tryParse(r['year'] as String? ?? ''))
+        .whereType<int>()
+        .toList();
   }
 }

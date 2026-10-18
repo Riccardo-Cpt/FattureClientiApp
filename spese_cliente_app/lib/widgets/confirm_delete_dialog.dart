@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:spese_cliente_app/l10n/strings.dart';
 
 Future<bool> showConfirmDeleteDialog(
   BuildContext context, {
@@ -13,11 +14,11 @@ Future<bool> showConfirmDeleteDialog(
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
+          child: Text(S.of(context).cancel),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('Delete'),
+          child: Text(S.of(context).delete),
         ),
       ],
     ),
